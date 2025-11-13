@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Serra da Barriga VR</title>
-    <!-- Usando A-Frame 1.0.4 - versão mais compatível com Android WebView -->
+    <title>Serra da Barriga VR - Alt</title>
+    <!-- Usando A-Frame 1.0.4 - versão mais compatível -->
     <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
 </head>
 <body>
@@ -22,7 +22,8 @@
             </video>
         </a-assets>
 
-        <a-videosphere src="#video360" rotation="0 -90 0"></a-videosphere>
+        <!-- Usando a-sky em vez de a-videosphere -->
+        <a-sky src="#video360" rotation="0 -90 0"></a-sky>
 
         <a-camera>
             <a-cursor></a-cursor>
@@ -31,23 +32,26 @@
 
     <script>
         var video = document.getElementById('video360');
-        var videosphere = document.querySelector('a-videosphere');
         var hasTransitioned = false;
 
         // Força play após interação
         document.querySelector('a-scene').addEventListener('click', function() {
-            video.play();
+            if (video.paused) {
+                video.play();
+            }
         });
 
         setTimeout(function() {
             video.muted = false;
-            video.play().catch(function(err) {
+            video.play().then(function() {
+                console.log('Video playing!');
+            }).catch(function(err) {
                 console.log('Play error:', err);
             });
         }, 500);
 
         video.addEventListener('playing', function() {
-            console.log('Video PLAYING!');
+            console.log('Video PLAYING event!');
         });
 
         video.addEventListener('timeupdate', function() {
@@ -64,6 +68,7 @@
             if (hasTransitioned) return;
             hasTransitioned = true;
 
+            console.log('Video complete - sending message');
             if (window.parent && window.parent !== window) {
                 window.parent.postMessage({ type: 'video-complete' }, '*');
             }
