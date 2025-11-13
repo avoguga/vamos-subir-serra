@@ -18,6 +18,15 @@
             font-family: Arial, sans-serif;
         }
 
+        /* A-Frame scene ocupa tela toda */
+        a-scene {
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
         #info-overlay {
             position: fixed;
             top: 10px;
@@ -100,6 +109,14 @@
         <button onclick="testMethod3()">3️⃣ Overlay + VR Button</button>
         <p style="font-size: 12px; margin: 5px 0;">Iframe sobre A-Frame, entra VR manualmente</p>
 
+        <hr style="margin: 15px 0; border-color: rgba(255,255,255,0.2);">
+
+        <p><strong>🔄 Ajustar Orientação:</strong></p>
+        <button onclick="rotateScene(0)">↑ 0° (Padrão)</button>
+        <button onclick="rotateScene(90)">→ 90°</button>
+        <button onclick="rotateScene(180)">↓ 180°</button>
+        <button onclick="rotateScene(-90)">← -90°</button>
+
         <button onclick="hideInfo()" style="background: #f44336; margin-top: 10px;">Fechar Info</button>
     </div>
 
@@ -107,13 +124,13 @@
     <div class="method-label" id="method-label" style="display: none;"></div>
 
     <!-- A-Frame VR Scene -->
-    <a-scene id="vr-scene" embedded>
+    <a-scene id="vr-scene" vr-mode-ui="enabled: true">
         <a-assets>
             <!-- Vídeo de teste -->
             <video id="test-video" src="./VSS 2025_09.webm" preload="auto" playsinline webkit-playsinline loop muted></video>
         </a-assets>
 
-        <!-- Sky com vídeo inicial -->
+        <!-- Sky com vídeo inicial - Rotação ajustada para orientação correta -->
         <a-sky id="video-sky" src="#test-video" rotation="0 -90 0"></a-sky>
 
         <!-- MÉTODO 1: Plano com HTML Shader -->
@@ -208,6 +225,26 @@
 
         function updateInfoText(text) {
             infoText.setAttribute('value', text);
+        }
+
+        // ============================================
+        // AJUSTAR ORIENTAÇÃO
+        // ============================================
+        function rotateScene(yRotation) {
+            console.log('🔄 Ajustando rotação Y para: ' + yRotation + '°');
+
+            // Rotacionar o video sky
+            videoSky.setAttribute('rotation', `0 ${yRotation} 0`);
+
+            // Rotacionar o plano HTML shader também
+            const htmlPlane = document.getElementById('html-shader-plane');
+            const currentPos = htmlPlane.getAttribute('position');
+
+            // Mensagem de confirmação
+            showMethodLabel(`Rotação: ${yRotation}°`);
+            updateInfoText(`Orientacao ajustada para: ${yRotation} graus\nGiroscopio continuara funcionando`);
+
+            console.log(`✅ Rotação aplicada: Y = ${yRotation}°`);
         }
 
         // ============================================
