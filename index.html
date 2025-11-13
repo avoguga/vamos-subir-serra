@@ -83,34 +83,6 @@
             border: none;
         }
 
-        /* Custom VR Button Overlay */
-        #custom-vr-button {
-            position: fixed;
-            bottom: 50%;
-            left: 50%;
-            transform: translate(-50%, 50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            border: 2px solid white;
-            padding: 20px 40px;
-            font-size: 24px;
-            font-weight: 600;
-            border-radius: 10px;
-            cursor: pointer;
-            z-index: 9999;
-            display: none;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-
-        #custom-vr-button.visible {
-            display: block;
-        }
-
-        #custom-vr-button:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: #4CAF50;
-        }
 
         /* Debug Console */
         #debug {
@@ -211,11 +183,6 @@
         ></iframe>
     </div>
 
-    <!-- Custom VR Button -->
-    <div id="custom-vr-button">
-        ENTRAR EM VR
-    </div>
-
     <!-- Debug Console -->
     <div id="debug"></div>
 
@@ -226,7 +193,7 @@
         const CONFIG = {
             VIDEO_URL: './VSS 2025_09.webm',
             VIDEO_TIME_LIMIT: 20, // seconds
-            KUULA_URL: 'https://kuula.co/share/collection/7H0RQ?logo=-1&info=0&fs=0&vr=0&sd=1&gyro=0&audio=0&thumbs=-1&inst=0&keys=0'
+            KUULA_URL: 'https://kuula.co/share/collection/7H0RQ?vr=1'
         };
 
         // ============================================
@@ -247,7 +214,6 @@
         const videoContainer = document.getElementById('video-container');
         const kuulaContainer = document.getElementById('kuula-container');
         const kuulaIframe = document.getElementById('kuula-iframe');
-        const customVRButton = document.getElementById('custom-vr-button');
         const debugConsole = document.getElementById('debug');
         const useLimitCheckbox = document.getElementById('use-time-limit');
         const showDebugCheckbox = document.getElementById('show-debug');
@@ -427,53 +393,15 @@
                     vrScene.style.display = 'none';
                     kuulaContainer.classList.add('visible');
 
-                    // Load Kuula with VR parameter already set
+                    // Load Kuula with VR parameter set to 1
                     kuulaIframe.src = CONFIG.KUULA_URL;
                     log('✅ Kuula VR tour loaded!');
-
-                    // Show custom VR button after Kuula loads
-                    setTimeout(function() {
-                        customVRButton.classList.add('visible');
-                        log('Custom VR button displayed');
-                    }, 2000);
+                    log('VR button should appear in Kuula player if device is supported');
                 }, 300);
 
                 videoPlaying = false;
             }
         }
-
-        // ============================================
-        // CUSTOM VR BUTTON HANDLER
-        // ============================================
-        customVRButton.addEventListener('click', function() {
-            log('Custom VR button clicked');
-            log('Attempting to enter VR mode...');
-
-            // Hide the button
-            customVRButton.classList.remove('visible');
-
-            // Try to trigger VR mode using WebXR API
-            if (navigator.xr) {
-                log('WebXR API available');
-                navigator.xr.isSessionSupported('immersive-vr').then(function(supported) {
-                    if (supported) {
-                        log('VR is supported! Requesting VR session...');
-                        navigator.xr.requestSession('immersive-vr').then(function(session) {
-                            log('✅ VR session started!');
-                        }).catch(function(error) {
-                            log('❌ Failed to start VR session: ' + error.message);
-                            log('⚠️ Please use the VR button inside Kuula player');
-                        });
-                    } else {
-                        log('⚠️ VR not supported on this device');
-                        log('Please use the VR button inside Kuula player if available');
-                    }
-                });
-            } else {
-                log('⚠️ WebXR API not available');
-                log('Please use the VR button inside Kuula player');
-            }
-        });
 
         // ============================================
         // START VR EXPERIENCE
