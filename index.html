@@ -3,23 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste: Kuula em A-Frame VR</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Serra da Barriga - VR Experience</title>
 
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
 
-    <!-- Componente HTML Shader (experimental) -->
-    <script src="https://unpkg.com/aframe-html-shader@0.2.0/dist/aframe-html-shader.min.js"></script>
-
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             overflow: hidden;
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #000;
         }
 
-        /* A-Frame scene ocupa tela toda */
-        a-scene {
+        /* Start Overlay - Simple Black Screen */
+        #start-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        #start-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .start-text {
+            color: #fff;
+            font-size: 28px;
+            font-weight: 300;
+            text-align: center;
+            padding: 40px;
+            line-height: 1.6;
+        }
+
+        /* A-Frame Scene */
+        #vr-scene {
             width: 100%;
             height: 100%;
             position: fixed;
@@ -27,41 +62,8 @@
             left: 0;
         }
 
-        #info-overlay {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 15px;
-            border-radius: 5px;
-            z-index: 10000;
-            max-width: 400px;
-            font-size: 14px;
-        }
-
-        #info-overlay h3 {
-            margin-top: 0;
-            color: #4CAF50;
-        }
-
-        #info-overlay button {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            margin: 5px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        #info-overlay button:hover {
-            background: #45a049;
-        }
-
-        /* Kuula overlay (Método 3) */
-        #kuula-overlay {
+        /* Kuula Container */
+        #kuula-container {
             position: fixed;
             top: 0;
             left: 0;
@@ -71,7 +73,7 @@
             z-index: 9000;
         }
 
-        #kuula-overlay.visible {
+        #kuula-container.visible {
             display: block;
         }
 
@@ -81,295 +83,383 @@
             border: none;
         }
 
-        .method-label {
+
+        /* Debug Console */
+        #debug {
             position: fixed;
             bottom: 10px;
             left: 10px;
-            background: rgba(255, 152, 0, 0.9);
-            color: white;
-            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 10px;
             border-radius: 5px;
-            z-index: 9500;
-            font-weight: bold;
+            max-width: 90%;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 20000;
+            display: none;
+        }
+
+        #debug.visible {
+            display: block;
         }
     </style>
 </head>
 <body>
-    <!-- Info Overlay -->
-    <div id="info-overlay">
-        <h3>🧪 Teste: Kuula + A-Frame VR</h3>
-        <p><strong>3 Métodos Experimentais:</strong></p>
 
-        <button onclick="testMethod1()">1️⃣ HTML Shader (Screenshot)</button>
-        <p style="font-size: 12px; margin: 5px 0;">Tenta capturar screenshot do iframe como textura</p>
-
-        <button onclick="testMethod2()">2️⃣ Plano Transparente</button>
-        <p style="font-size: 12px; margin: 5px 0;">Iframe atrás do canvas WebGL</p>
-
-        <button onclick="testMethod3()">3️⃣ Overlay + VR Button</button>
-        <p style="font-size: 12px; margin: 5px 0;">Iframe sobre A-Frame, entra VR manualmente</p>
-
-        <hr style="margin: 15px 0; border-color: rgba(255,255,255,0.2);">
-
-        <p><strong>🔄 Ajustar Orientação:</strong></p>
-        <button onclick="rotateScene(0)">↑ 0° (Padrão)</button>
-        <button onclick="rotateScene(90)">→ 90°</button>
-        <button onclick="rotateScene(180)">↓ 180°</button>
-        <button onclick="rotateScene(-90)">← -90°</button>
-
-        <button onclick="hideInfo()" style="background: #f44336; margin-top: 10px;">Fechar Info</button>
+    <!-- Start Overlay -->
+    <div id="start-overlay">
+        <div class="start-text">Toque para começar a experiência</div>
     </div>
-
-    <!-- Method Label -->
-    <div class="method-label" id="method-label" style="display: none;"></div>
 
     <!-- A-Frame VR Scene -->
-    <a-scene id="vr-scene" vr-mode-ui="enabled: true">
+    <a-scene id="vr-scene" embedded vr-mode-ui="enabled: true">
         <a-assets>
-            <!-- Vídeo de teste -->
-            <video id="test-video" src="./VSS 2025_09.webm" preload="auto" playsinline webkit-playsinline loop muted></video>
+            <video
+                id="intro-video"
+                preload="auto"
+                playsinline
+                webkit-playsinline
+                crossorigin="anonymous"
+            ></video>
         </a-assets>
 
-        <!-- Sky com vídeo inicial - Rotação ajustada para orientação correta -->
-        <a-sky id="video-sky" src="#test-video" rotation="0 -90 0"></a-sky>
-
-        <!-- MÉTODO 1: Plano com HTML Shader -->
-        <a-plane
-            id="html-shader-plane"
-            position="0 1.6 -3"
-            width="4"
-            height="2.25"
-            visible="false"
-            material="shader: html; target: #kuula-content; width: 1920; height: 1080; fps: 1">
-        </a-plane>
-
-        <!-- MÉTODO 2: Plano transparente para iframe -->
-        <a-plane
-            id="transparent-plane"
-            position="0 1.6 -3"
-            width="4"
-            height="2.25"
-            visible="false"
-            material="opacity: 0; transparent: true">
-        </a-plane>
-
-        <!-- Texto informativo -->
-        <a-text
-            id="info-text"
-            value="Clique nos botoes acima para testar"
-            position="0 2.5 -3"
-            align="center"
-            color="#4CAF50"
-            width="6">
-        </a-text>
+        <!-- Video sky - starts invisible, will be activated when video is ready -->
+        <a-sky id="video-sky" visible="false" rotation="0 -90 0"></a-sky>
 
         <!-- Camera -->
-        <a-camera position="0 1.6 0" look-controls wasd-controls></a-camera>
-
-        <!-- Cursor para interação -->
-        <a-cursor></a-cursor>
+        <a-camera position="0 0 0" look-controls></a-camera>
     </a-scene>
 
-    <!-- MÉTODO 1: Container HTML para screenshot -->
-    <div id="kuula-content" style="display: none; width: 1920px; height: 1080px;">
-        <iframe
-            src="https://kuula.co/share/collection/7H0RQ?logo=0&info=0&fs=0&vr=1&sd=1&thumbs=0"
-            style="width: 100%; height: 100%; border: none;"
-            allowfullscreen
-            allow="xr-spatial-tracking; gyroscope; accelerometer; vr">
-        </iframe>
-    </div>
-
-    <!-- MÉTODO 2: Iframe posicionado -->
-    <iframe
-        id="positioned-iframe"
-        src=""
-        style="position: fixed; display: none; width: 800px; height: 450px; z-index: 100; border: 2px solid #4CAF50;"
-        allowfullscreen
-        allow="xr-spatial-tracking; gyroscope; accelerometer; vr">
-    </iframe>
-
-    <!-- MÉTODO 3: Kuula Overlay -->
-    <div id="kuula-overlay">
+    <!-- Kuula Tour -->
+    <div id="kuula-container">
         <iframe
             id="kuula-iframe"
             src=""
             allowfullscreen
-            allow="xr-spatial-tracking; gyroscope; accelerometer; vr; fullscreen">
-        </iframe>
+            allow="xr-spatial-tracking; gyroscope; accelerometer; vr; autoplay; fullscreen"
+            webkitallowfullscreen="true"
+            mozallowfullscreen="true"
+        ></iframe>
     </div>
 
+    <!-- Debug Console -->
+    <div id="debug"></div>
+
     <script>
-        // Configuração
-        const KUULA_URL = 'https://kuula.co/share/collection/7H0RQ?logo=0&info=0&fs=0&vr=1&sd=1&thumbs=0';
-
-        const scene = document.querySelector('#vr-scene');
-        const infoText = document.querySelector('#info-text');
-        const methodLabel = document.querySelector('#method-label');
-        const videoSky = document.querySelector('#video-sky');
-        const testVideo = document.querySelector('#test-video');
-
-        // Iniciar vídeo de fundo
-        setTimeout(() => {
-            testVideo.play().catch(e => console.log('Video autoplay blocked:', e));
-        }, 500);
-
-        function hideInfo() {
-            document.getElementById('info-overlay').style.display = 'none';
-        }
-
-        function showMethodLabel(text) {
-            methodLabel.textContent = text;
-            methodLabel.style.display = 'block';
-        }
-
-        function updateInfoText(text) {
-            infoText.setAttribute('value', text);
-        }
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const CONFIG = {
+            VIDEO_URL: './VSS 2025_09.webm',
+            VIDEO_TIME_LIMIT: 20, // seconds
+            KUULA_URL: 'https://kuula.co/share/collection/7H0RQ?logo=0&info=0&fs=0&vr=1&sd=1&thumbs=0'
+        };
 
         // ============================================
-        // AJUSTAR ORIENTAÇÃO
+        // STATE
         // ============================================
-        function rotateScene(yRotation) {
-            console.log('🔄 Ajustando rotação Y para: ' + yRotation + '°');
+        let USE_TIME_LIMIT = true;
+        let SHOW_DEBUG = false;
+        let videoPlaying = false;
+        let videoStartTime = 0;
 
-            // Rotacionar o video sky
-            videoSky.setAttribute('rotation', `0 ${yRotation} 0`);
+        // ============================================
+        // ELEMENTS
+        // ============================================
+        const startOverlay = document.getElementById('start-overlay');
+        const startBtn = document.getElementById('start-btn');
+        const vrScene = document.getElementById('vr-scene');
+        const introVideo = document.getElementById('intro-video');
+        const videoContainer = document.getElementById('video-container');
+        const kuulaContainer = document.getElementById('kuula-container');
+        const kuulaIframe = document.getElementById('kuula-iframe');
+        const debugConsole = document.getElementById('debug');
 
-            // Rotacionar o plano HTML shader também
-            const htmlPlane = document.getElementById('html-shader-plane');
-            const currentPos = htmlPlane.getAttribute('position');
+        // ============================================
+        // DEBUG LOGGING
+        // ============================================
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            console.log(`[${timestamp}] ${message}`);
 
-            // Mensagem de confirmação
-            showMethodLabel(`Rotação: ${yRotation}°`);
-            updateInfoText(`Orientacao ajustada para: ${yRotation} graus\nGiroscopio continuara funcionando`);
-
-            console.log(`✅ Rotação aplicada: Y = ${yRotation}°`);
+            if (SHOW_DEBUG) {
+                debugConsole.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+                debugConsole.scrollTop = debugConsole.scrollHeight;
+            }
         }
 
         // ============================================
-        // MÉTODO 1: HTML Shader (Screenshot)
+        // VIDEO EVENTS
         // ============================================
-        function testMethod1() {
-            console.log('🧪 Testing Method 1: HTML Shader');
-            showMethodLabel('Método 1: HTML Shader (Screenshot)');
-
-            // Esconder outros elementos
-            document.getElementById('transparent-plane').setAttribute('visible', false);
-            document.getElementById('kuula-overlay').classList.remove('visible');
-            document.getElementById('positioned-iframe').style.display = 'none';
-            videoSky.setAttribute('visible', false);
-
-            // Mostrar plano com shader
-            const htmlPlane = document.getElementById('html-shader-plane');
-            htmlPlane.setAttribute('visible', true);
-
-            // Mostrar conteúdo para screenshot
-            document.getElementById('kuula-content').style.display = 'block';
-
-            updateInfoText('Metodo 1: HTML Shader\nCaptura screenshot do iframe\nLIMITACAO: Nao interativo, apenas visual estatico');
-
-            setTimeout(() => {
-                alert('⚠️ LIMITAÇÃO DO MÉTODO 1:\n\n' +
-                      '- Funciona apenas como SCREENSHOT estático\n' +
-                      '- NÃO é interativo (não pode navegar no tour)\n' +
-                      '- Atualiza a cada 1 segundo (FPS baixo)\n' +
-                      '- Iframe pode bloquear captura por CORS\n\n' +
-                      'Resultado: Você verá uma imagem estática do Kuula, sem interação.');
-            }, 1000);
-        }
-
-        // ============================================
-        // MÉTODO 2: Plano Transparente + Iframe Posicionado
-        // ============================================
-        function testMethod2() {
-            console.log('🧪 Testing Method 2: Transparent Plane');
-            showMethodLabel('Método 2: Iframe Atrás do Canvas');
-
-            // Esconder outros
-            document.getElementById('html-shader-plane').setAttribute('visible', false);
-            document.getElementById('kuula-overlay').classList.remove('visible');
-            document.getElementById('kuula-content').style.display = 'none';
-            videoSky.setAttribute('visible', false);
-
-            // Mostrar plano transparente
-            const transparentPlane = document.getElementById('transparent-plane');
-            transparentPlane.setAttribute('visible', true);
-
-            // Posicionar iframe
-            const iframe = document.getElementById('positioned-iframe');
-            iframe.style.display = 'block';
-            iframe.src = KUULA_URL;
-
-            // Calcular posição 2D aproximada do plano 3D
-            // Centralizar na tela
-            iframe.style.left = '50%';
-            iframe.style.top = '50%';
-            iframe.style.transform = 'translate(-50%, -50%)';
-
-            updateInfoText('Metodo 2: Iframe Posicionado\nIframe atras do canvas WebGL\nLIMITACAO: NAO aparece em modo VR');
-
-            setTimeout(() => {
-                alert('⚠️ LIMITAÇÃO DO MÉTODO 2:\n\n' +
-                      '- Iframe aparece em modo 2D normal\n' +
-                      '- Quando entra em VR, o iframe DESAPARECE\n' +
-                      '- WebGL canvas fica em primeiro plano\n' +
-                      '- Impossível sincronizar posição 3D com iframe\n\n' +
-                      'Resultado: Funciona em 2D, quebra em VR.');
-            }, 1000);
-        }
-
-        // ============================================
-        // MÉTODO 3: Overlay Completo + VR Manual
-        // ============================================
-        function testMethod3() {
-            console.log('🧪 Testing Method 3: Overlay + Manual VR');
-            showMethodLabel('Método 3: Kuula Overlay (MELHOR OPÇÃO)');
-
-            // Esconder A-Frame
-            document.getElementById('html-shader-plane').setAttribute('visible', false);
-            document.getElementById('transparent-plane').setAttribute('visible', false);
-            document.getElementById('positioned-iframe').style.display = 'none';
-            document.getElementById('kuula-content').style.display = 'none';
-
-            // Mostrar Kuula overlay
-            const kuulaOverlay = document.getElementById('kuula-overlay');
-            kuulaOverlay.classList.add('visible');
-
-            const kuulaIframe = document.getElementById('kuula-iframe');
-            kuulaIframe.src = KUULA_URL;
-
-            setTimeout(() => {
-                alert('✅ MÉTODO 3 - MELHOR SOLUÇÃO PRÁTICA:\n\n' +
-                      '1. Kuula carrega em tela cheia\n' +
-                      '2. Giroscópio funciona automaticamente\n' +
-                      '3. Usuário clica no botão VR do Kuula\n' +
-                      '4. Entra em modo VR estereoscópico\n\n' +
-                      'VANTAGENS:\n' +
-                      '+ Tour completo do Kuula funciona\n' +
-                      '+ Navegação por hotspots\n' +
-                      '+ VR real (tela dividida)\n\n' +
-                      'DESVANTAGEM:\n' +
-                      '- Requer clique manual no botão VR\n\n' +
-                      'Clique no botão VR (ícone de óculos) no canto superior direito!');
-            }, 1000);
-        }
-
-        // Detectar quando sai do VR
-        scene.addEventListener('exit-vr', function() {
-            console.log('Saiu do modo VR');
+        introVideo.addEventListener('loadedmetadata', function() {
+            log(`Video metadata loaded - Duration: ${introVideo.duration.toFixed(2)}s`);
+            log(`Video dimensions: ${introVideo.videoWidth}x${introVideo.videoHeight}`);
         });
 
-        scene.addEventListener('enter-vr', function() {
-            console.log('Entrou no modo VR');
+        introVideo.addEventListener('canplay', function() {
+            log('Video can play');
         });
 
-        // Log inicial
-        console.log('🧪 Teste de integração Kuula + A-Frame VR carregado');
-        console.log('Métodos disponíveis:');
-        console.log('1. HTML Shader (screenshot estático)');
-        console.log('2. Iframe posicionado (não funciona em VR)');
-        console.log('3. Overlay completo (melhor opção prática)');
+        let videoSkyActivated = false;
+
+        introVideo.addEventListener('playing', function() {
+            log('▶️ VIDEO PLAYING EVENT!');
+            log(`  Current time: ${introVideo.currentTime.toFixed(2)}s`);
+            log(`  Paused: ${introVideo.paused}`);
+            log(`  Video size: ${introVideo.videoWidth}x${introVideo.videoHeight}`);
+            log(`  ReadyState: ${introVideo.readyState}`);
+
+            if (!videoSkyActivated) {
+                // Wait for video to have actual frames (check currentTime > 0)
+                const checkVideoFrames = setInterval(function() {
+                    if (introVideo.currentTime > 0.1) {
+                        clearInterval(checkVideoFrames);
+
+                        log('✅ Video has frames! Activating sky...');
+                        log(`  Current time: ${introVideo.currentTime.toFixed(2)}s`);
+
+                        const videoSky = document.getElementById('video-sky');
+                        if (videoSky) {
+                            // Set the video source and make visible
+                            videoSky.setAttribute('src', '#intro-video');
+                            videoSky.setAttribute('visible', 'true');
+
+                            log('✅ Video sky activated with video texture!');
+                            videoSkyActivated = true;
+                        } else {
+                            log('❌ ERROR: video-sky element not found!');
+                        }
+                    }
+                }, 50); // Check every 50ms
+
+                // Safety timeout
+                setTimeout(function() {
+                    clearInterval(checkVideoFrames);
+                    if (!videoSkyActivated) {
+                        log('⚠️ Timeout waiting for video frames, activating anyway...');
+                        const videoSky = document.getElementById('video-sky');
+                        if (videoSky) {
+                            videoSky.setAttribute('src', '#intro-video');
+                            videoSky.setAttribute('visible', 'true');
+                            videoSkyActivated = true;
+                        }
+                    }
+                }, 2000);
+            }
+        });
+
+        introVideo.addEventListener('pause', function() {
+            log('⏸️ Video PAUSED');
+        });
+
+        introVideo.addEventListener('ended', function() {
+            log('🏁 Video ENDED naturally');
+            if (videoPlaying) {
+                transitionToKuula();
+            }
+        });
+
+        introVideo.addEventListener('timeupdate', function() {
+            if (!videoPlaying) return;
+
+            // Check time limit if enabled
+            if (USE_TIME_LIMIT && introVideo.currentTime >= CONFIG.VIDEO_TIME_LIMIT) {
+                log(`⏱️ Time limit reached: ${introVideo.currentTime.toFixed(2)}s / ${CONFIG.VIDEO_TIME_LIMIT}s`);
+                transitionToKuula();
+            }
+        });
+
+        introVideo.addEventListener('error', function() {
+            const error = introVideo.error;
+            log('❌ VIDEO ERROR:');
+            if (error) {
+                log(`  Code: ${error.code}`);
+                switch(error.code) {
+                    case error.MEDIA_ERR_ABORTED:
+                        log('  Type: Playback aborted');
+                        break;
+                    case error.MEDIA_ERR_NETWORK:
+                        log('  Type: Network error');
+                        break;
+                    case error.MEDIA_ERR_DECODE:
+                        log('  Type: Decode error');
+                        break;
+                    case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                        log('  Type: Source not supported');
+                        break;
+                }
+            }
+            log('Skipping to Kuula...');
+            setTimeout(transitionToKuula, 1000);
+        });
+
+        // ============================================
+        // TRANSITION TO KUULA
+        // ============================================
+        function transitionToKuula() {
+            if (kuulaContainer.classList.contains('visible')) {
+                return; // Already transitioned
+            }
+
+            log('🎬 Transitioning to Kuula VR tour...');
+
+            // Check if we're in VR mode
+            const isInVR = vrScene.is('vr-mode');
+            log('Currently in VR mode: ' + isInVR);
+
+            // Stop video
+            if (introVideo) {
+                introVideo.pause();
+                introVideo.currentTime = 0;
+            }
+
+            // If in VR mode, exit first to prevent issues
+            if (isInVR) {
+                log('Exiting A-Frame VR mode...');
+                vrScene.exitVR().then(function() {
+                    log('Exited A-Frame VR mode');
+                    performTransition();
+                }).catch(function(error) {
+                    log('Error exiting VR: ' + error.message);
+                    performTransition();
+                });
+            } else {
+                performTransition();
+            }
+
+            function performTransition() {
+                // Hide A-Frame scene
+                vrScene.style.opacity = '0';
+                vrScene.style.transition = 'opacity 0.3s';
+
+                // Show Kuula after fade
+                setTimeout(function() {
+                    vrScene.style.display = 'none';
+                    kuulaContainer.classList.add('visible');
+
+                    // Load Kuula with VR parameter set to 1
+                    kuulaIframe.src = CONFIG.KUULA_URL;
+                    log('✅ Kuula VR tour loaded!');
+                    log('VR button should appear in Kuula player if device is supported');
+
+                    // EXPERIMENTAL: Try to trigger fullscreen on Kuula iframe
+                    // This provides a more immersive experience close to VR
+                    setTimeout(function() {
+                        tryFullscreen();
+                    }, 1000);
+                }, 300);
+
+                videoPlaying = false;
+            }
+
+            // EXPERIMENTAL: Try to enter fullscreen mode automatically
+            function tryFullscreen() {
+                log('🖥️ Attempting to enter fullscreen...');
+
+                const elem = kuulaIframe;
+
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen().then(function() {
+                        log('✅ Fullscreen activated!');
+                    }).catch(function(err) {
+                        log('⚠️ Fullscreen failed: ' + err.message);
+                    });
+                } else if (elem.webkitRequestFullscreen) { /* Safari */
+                    elem.webkitRequestFullscreen();
+                    log('✅ Fullscreen activated (webkit)!');
+                } else if (elem.msRequestFullscreen) { /* IE11 */
+                    elem.msRequestFullscreen();
+                    log('✅ Fullscreen activated (ms)!');
+                }
+            }
+        }
+
+        // ============================================
+        // START VR EXPERIENCE
+        // ============================================
+        function startVRExperience() {
+            log('========================================');
+            log('STARTING VR EXPERIENCE');
+            log('========================================');
+            log(`Mode: ${USE_TIME_LIMIT ? '15 seconds limit' : 'Full video'}`);
+            log(`Video: ${CONFIG.VIDEO_URL}`);
+
+            // Hide start overlay
+            startOverlay.classList.add('hidden');
+
+            // Wait for A-Frame to be ready
+            vrScene.addEventListener('loaded', function() {
+                log('A-Frame scene loaded and ready');
+
+                // Set video source
+                introVideo.src = CONFIG.VIDEO_URL;
+                log(`Loading video: ${CONFIG.VIDEO_URL}`);
+
+                // Load video
+                introVideo.load();
+
+                // Wait for video to be ready, then play
+                setTimeout(function() {
+                    log('Attempting to play video...');
+
+                    const playPromise = introVideo.play();
+
+                    if (playPromise !== undefined) {
+                        playPromise.then(function() {
+                            log('✅ Video play() succeeded');
+
+                            // Wait to confirm video is actually playing
+                            setTimeout(function() {
+                                if (!introVideo.paused && introVideo.currentTime > 0) {
+                                    log('✅✅ VIDEO CONFIRMED PLAYING!');
+                                    log(`Duration: ${introVideo.duration.toFixed(2)}s`);
+                                    log(`Current time: ${introVideo.currentTime.toFixed(2)}s`);
+
+                                    videoPlaying = true;
+                                    videoStartTime = Date.now();
+
+                                    // Enter VR mode automatically if supported
+                                    if (vrScene.is('vr-mode')) {
+                                        log('VR mode available');
+                                    }
+                                } else {
+                                    log('⚠️ Video not playing after play() call');
+                                    log(`  Paused: ${introVideo.paused}`);
+                                    log(`  Current time: ${introVideo.currentTime}`);
+                                    log('Going to Kuula...');
+                                    setTimeout(transitionToKuula, 1000);
+                                }
+                            }, 2000);
+                        }).catch(function(error) {
+                            log(`❌ Video play() failed: ${error.message}`);
+                            log('Going to Kuula...');
+                            setTimeout(transitionToKuula, 1000);
+                        });
+                    }
+                }, 1000);
+            }, { once: true });
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+        startOverlay.addEventListener('click', startVRExperience);
+        startOverlay.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            startVRExperience();
+        });
+
+        // ============================================
+        // INITIALIZE
+        // ============================================
+        log('========================================');
+        log('Serra da Barriga VR Experience');
+        log('========================================');
+        log('Ready! Click "Iniciar Experiência VR"');
+        log(`Default mode: ${USE_TIME_LIMIT ? '15s limit' : 'Full video'}`);
     </script>
 </body>
 </html>
