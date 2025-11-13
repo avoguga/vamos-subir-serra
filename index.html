@@ -105,47 +105,9 @@
         #debug.visible {
             display: block;
         }
-
-        /* Settings Panel */
-        #settings {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 15px;
-            border-radius: 5px;
-            z-index: 20000;
-            font-size: 14px;
-        }
-
-        #settings label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-
-        #settings input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
-    <!-- Settings Panel -->
-    <div id="settings">
-        <label>
-            <input type="checkbox" id="use-time-limit" checked>
-            <span>Limitar vídeo a 15 segundos</span>
-        </label>
-        <label>
-            <input type="checkbox" id="show-debug">
-            <span>Mostrar debug</span>
-        </label>
-    </div>
 
     <!-- Start Overlay -->
     <div id="start-overlay">
@@ -215,8 +177,6 @@
         const kuulaContainer = document.getElementById('kuula-container');
         const kuulaIframe = document.getElementById('kuula-iframe');
         const debugConsole = document.getElementById('debug');
-        const useLimitCheckbox = document.getElementById('use-time-limit');
-        const showDebugCheckbox = document.getElementById('show-debug');
 
         // ============================================
         // DEBUG LOGGING
@@ -230,19 +190,6 @@
                 debugConsole.scrollTop = debugConsole.scrollHeight;
             }
         }
-
-        // ============================================
-        // SETTINGS
-        // ============================================
-        useLimitCheckbox.addEventListener('change', function() {
-            USE_TIME_LIMIT = this.checked;
-            log(`Time limit ${USE_TIME_LIMIT ? 'ENABLED' : 'DISABLED'} - ${USE_TIME_LIMIT ? '15s' : 'Full video'}`);
-        });
-
-        showDebugCheckbox.addEventListener('change', function() {
-            SHOW_DEBUG = this.checked;
-            debugConsole.classList.toggle('visible', SHOW_DEBUG);
-        });
 
         // ============================================
         // VIDEO EVENTS
