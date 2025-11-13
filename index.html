@@ -23,20 +23,20 @@
             background: #000;
         }
 
-        /* Start Overlay */
+        /* Start Overlay - Simple Black Screen */
         #start-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: #000;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 10000;
-            transition: opacity 0.5s;
+            cursor: pointer;
+            transition: opacity 0.3s;
         }
 
         #start-overlay.hidden {
@@ -44,44 +44,13 @@
             pointer-events: none;
         }
 
-        .title {
-            color: white;
-            font-size: 48px;
-            font-weight: 700;
-            margin-bottom: 20px;
+        .start-text {
+            color: #fff;
+            font-size: 28px;
+            font-weight: 300;
             text-align: center;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-
-        .subtitle {
-            color: rgba(255,255,255,0.9);
-            font-size: 20px;
-            margin-bottom: 50px;
-            text-align: center;
-        }
-
-        .start-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 25px 50px;
-            font-size: 24px;
-            font-weight: 600;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .start-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-        }
-
-        .start-button:active {
-            transform: translateY(0);
+            padding: 40px;
+            line-height: 1.6;
         }
 
         /* A-Frame Scene */
@@ -179,9 +148,7 @@
 
     <!-- Start Overlay -->
     <div id="start-overlay">
-        <h1 class="title">Serra da Barriga</h1>
-        <p class="subtitle">Experiência em Realidade Virtual</p>
-        <button class="start-button" id="start-btn">Iniciar Experiência VR</button>
+        <div class="start-text">Toque para começar a experiência</div>
     </div>
 
     <!-- A-Frame VR Scene -->
@@ -391,25 +358,48 @@
 
             log('🎬 Transitioning to Kuula VR tour...');
 
+            // Check if we're in VR mode
+            const isInVR = vrScene.is('vr-mode');
+            log('Currently in VR mode: ' + isInVR);
+
             // Stop video
             if (introVideo) {
                 introVideo.pause();
                 introVideo.currentTime = 0;
             }
 
-            // Hide A-Frame scene
-            vrScene.style.opacity = '0';
-            vrScene.style.transition = 'opacity 0.5s';
+            // If in VR mode, exit first to prevent issues
+            if (isInVR) {
+                log('Exiting A-Frame VR mode...');
+                vrScene.exitVR().then(function() {
+                    log('Exited A-Frame VR mode');
+                    performTransition();
+                }).catch(function(error) {
+                    log('Error exiting VR: ' + error.message);
+                    performTransition();
+                });
+            } else {
+                performTransition();
+            }
 
-            // Show Kuula after fade
-            setTimeout(function() {
-                vrScene.style.display = 'none';
-                kuulaContainer.classList.add('visible');
-                kuulaIframe.src = CONFIG.KUULA_URL;
-                log('✅ Kuula VR tour loaded!');
-            }, 500);
+            function performTransition() {
+                // Hide A-Frame scene
+                vrScene.style.opacity = '0';
+                vrScene.style.transition = 'opacity 0.3s';
 
-            videoPlaying = false;
+                // Show Kuula after fade
+                setTimeout(function() {
+                    vrScene.style.display = 'none';
+                    kuulaContainer.classList.add('visible');
+
+                    // Load Kuula with VR parameter already set
+                    kuulaIframe.src = CONFIG.KUULA_URL;
+                    log('✅ Kuula VR tour loaded!');
+                    log('User can click VR button in Kuula to enter VR mode');
+                }, 300);
+
+                videoPlaying = false;
+            }
         }
 
         // ============================================
@@ -481,8 +471,8 @@
         // ============================================
         // EVENT LISTENERS
         // ============================================
-        startBtn.addEventListener('click', startVRExperience);
-        startBtn.addEventListener('touchstart', function(e) {
+        startOverlay.addEventListener('click', startVRExperience);
+        startOverlay.addEventListener('touchstart', function(e) {
             e.preventDefault();
             startVRExperience();
         });
